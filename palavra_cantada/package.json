@@ -1,0 +1,20 @@
+{
+  "name": "palavra_cantada",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "nuxt build",
+    "dev": "nuxt dev",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview"
+  },
+  "dependencies": {
+    "@nuxt/content": "^3.9.0",
+    "ads1x15": "^1.2.0",
+    "better-sqlite3": "^12.5.0",
+    "i2c-bus": "^5.2.3",
+    "nuxt": "^4.2.2",
+    "onoff": "^6.0.3",
+    "ws": "^8.18.3"
+  }
+}

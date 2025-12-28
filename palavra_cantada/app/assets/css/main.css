@@ -1,0 +1,18 @@
+/* RESET GLOBAL */
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* OCUPA 100% DA TELA */
+html,
+body,
+#__nuxt {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: #0b3c8a; /* azul base */
+}
