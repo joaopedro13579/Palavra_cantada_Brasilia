@@ -1,54 +1,82 @@
 from gpiozero import Button, LED
+from multiprocessing import Process
 import subprocess
-import threading
-import signal
+import time
 
-# GPIO
-botao = Button(17, pull_up=True)
-led = LED(27)
+# =========================
+# CONFIGURAÇÃO
+# =========================
 
-# Áudio
-MUSICA = "/home/pi/audio/musica.wav"
+AUDIO_DEVICES = ["hw:1,0", "hw:2,0"]
 
-DEVICES = [
-    "hw:1,0",  # caixa
-    "hw:2,0"   # fone
-]
+BOTOES = {
+    "b1": {
+        "botao": Button(5, pull_up=True),
+        "led": LED(17),
+        "musica": "/home/pi/audio/musica1.wav"
+    },
+    "b2": {
+        "botao": Button(6, pull_up=True),
+        "led": LED(27),
+        "musica": "/home/pi/audio/musica2.wav"
+    },
+    "b3": {
+        "botao": Button(13, pull_up=True),
+        "led": LED(22),
+        "musica": "/home/pi/audio/musica3.wav"
+    }
+}
 
 tocando = False
 
-def tocar_em_device(device):
+
+# =========================
+# FUNÇÕES
+# =========================
+
+def tocar_audio(device, musica):
     subprocess.run([
         "aplay",
         "-D", device,
-        MUSICA
+        musica
     ])
 
-def tocar_musica_dupla():
+
+def tocar_musica(config):
     global tocando
-    if tocando:
-        return
-
     tocando = True
+
+    led = config["led"]
+    musica = config["musica"]
+
     led.on()
-    print("▶ Tocando música na caixa e no fone")
 
-    threads = []
+    processos = []
+    for dev in AUDIO_DEVICES:
+        p = Process(target=tocar_audio, args=(dev, musica))
+        p.start()
+        processos.append(p)
 
-    for d in DEVICES:
-        t = threading.Thread(target=tocar_em_device, args=(d,))
-        t.start()
-        threads.append(t)
-
-    # espera os dois terminarem
-    for t in threads:
-        t.join()
+    # espera música terminar
+    for p in processos:
+        p.join()
 
     led.off()
     tocando = False
-    print("⏹ Música finalizada")
 
-botao.when_pressed = tocar_musica_dupla
 
-print("🟢 Pronto. Pressione o botão.")
-signal.pause()
+# =========================
+# LOOP PRINCIPAL
+# =========================
+
+print("🎵 Sistema pronto. Aguardando botões...")
+
+while True:
+    if not tocando:
+        for cfg in BOTOES.values():
+            if cfg["botao"].is_pressed:
+                tocar_musica(cfg)
+                time.sleep(0.5)  # debounce simples
+                break
+
+    time.sleep(0.05)
