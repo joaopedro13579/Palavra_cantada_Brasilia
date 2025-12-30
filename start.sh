@@ -1,82 +1,65 @@
 #!/bin/bash
 
-PROJECT_DIR="$(pwd)"
+BASE_DIR="/home/joao-pedro/PALAVRA_CANTADA_BRASILIA"
+SERVICE_NAME="palavra_cantada_auto"
+SERVICE_FILE="/etc/systemd/system/${SERVICE_NAME}.service"
 
-run_torneira() {
-    echo "🚰 Iniciando TORNEIRA..."
-    node backend/torneira/torneira.js &
-}
+echo "=============================="
+echo " PALAVRA CANTADA BRASILIA "
+echo "=============================="
+echo "Escolha o programa para iniciar no boot:"
+echo ""
+echo "1) Mapa"
+echo "2) Karaoke"
+echo "3) Torneira"
+echo ""
+read -p "Digite a opção: " OPTION
 
-run_karaoke() {
-    echo "🎤 Iniciando KARAOKE..."
-    node backend/karaoke/karaoke.js &
-}
+case $OPTION in
+  1)
+    CMD="python3 $BASE_DIR/backend/mapa/mapa.py"
+    ;;
+  2)
+    CMD="node $BASE_DIR/backend/karaoke/karaoke.js"
+    ;;
+  3)
+    CMD="node $BASE_DIR/backend/torneira/torneira.js"
+    ;;
+  *)
+    echo "Opção inválida"
+    exit 1
+    ;;
+esac
 
-run_mapa() {
-    echo "🗺️ Iniciando MAPA..."
-    python3 backend/mapa/mapa.py &
-}
+echo "Criando serviço systemd..."
 
-run_pomar() {
-    echo "🌳 Iniciando POMAR..."
-    python3 backend/cocos/pomar.py &
-}
+sudo bash -c "cat > $SERVICE_FILE" <<EOF
+[Unit]
+Description=Palavra Cantada - Auto
+After=network.target sound.target
 
-run_todos() {
-    run_torneira
-    run_karaoke
-    run_mapa
-    run_pomar
-}
+[Service]
+Type=simple
+User=joao-pedro
+WorkingDirectory=$BASE_DIR
+ExecStart=$CMD
+Restart=always
+RestartSec=2
+StandardOutput=journal
+StandardError=journal
 
-menu() {
-    clear
-    echo "======================================="
-    echo "  PALAVRA CANTADA BRASÍLIA - CONTROLE"
-    echo "======================================="
-    echo
-    echo "1) Rodar TORNEIRA"
-    echo "2) Rodar KARAOKE"
-    echo "3) Rodar MAPA"
-    echo "4) Rodar POMAR"
-    echo "5) Rodar TORNEIRA + KARAOKE"
-    echo "6) Rodar TODOS"
-    echo "0) Sair"
-    echo
-    read -p "Escolha uma opção: " opt
-}
+[Install]
+WantedBy=multi-user.target
+EOF
 
-while true; do
-    menu
-    case $opt in
-        1)
-            run_torneira
-            ;;
-        2)
-            run_karaoke
-            ;;
-        3)
-            run_mapa
-            ;;
-        4)
-            run_pomar
-            ;;
-        5)
-            run_torneira
-            run_karaoke
-            ;;
-        6)
-            run_todos
-            ;;
-        0)
-            echo "👋 Saindo..."
-            exit 0
-            ;;
-        *)
-            echo "❌ Opção inválida"
-            ;;
-    esac
+echo "Registrando serviço..."
+sudo systemctl daemon-reload
+sudo systemctl enable ${SERVICE_NAME}.service
 
-    echo
-    read -p "Pressione ENTER para continuar..."
-done
+echo ""
+echo "Serviço criado e habilitado:"
+echo "  ${SERVICE_NAME}.service"
+echo ""
+echo "Reiniciando em 5 segundos..."
+sleep 5
+sudo reboot
